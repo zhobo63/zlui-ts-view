@@ -8,16 +8,19 @@
 - dark style like vscode
 - package.json 包含套件 "@zhobo63/imgui-ts" "@zhobo63/zlui-ts" "@zhobo63/zlui-ts-spine"
 - src/ 目錄放置 typescript 
+- www/upload 存放上傳檔案
+- 圖示使用font-awesome
 
 ### Left Panel
 
 - 可以捲動
-- 輸入`工作目錄` : show open path dialog or drop path
-  - 如果是拖拉 .ui 檔案 切換到檔案的工作目錄 並且開啟檔案
 - 輸入`縮放比例` @scale: range bar 10% ~ 1000%
   - zlmgr.scale.Set(@scale,@scale)
-- 檔案列表: 顯示`工作目錄`下的檔案 切換`工作目錄`自動更新列表
+- 檔案列表: 
+  - 拖拉檔案 上傳到 upload資料夾 並更新檔案列表
   - 副檔名.ui為zlui dsl 點擊檔案開啟
+- `垃圾桶`按鈕 (使用圖示) `檔案列表`標題右側
+  - 按下清空上傳檔案
 - 樹狀結構顯示 zlui-framework 的物件
 
 ### Right Panel
