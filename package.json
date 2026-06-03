@@ -1,0 +1,38 @@
+{
+  "name": "zlui-ts-view",
+  "version": "0.0.1",
+  "description": "zlui-ts-view",
+  "keywords": [
+    "zlui-ts"
+  ],
+  "homepage": "https://github.com/zhobo63/zlui-ts-view#readme",
+  "bugs": {
+    "url": "https://github.com/zhobo63/zlui-ts-view/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhobo63/zlui-ts-view.git"
+  },
+  "license": "MIT",
+  "author": "zhobo63",
+  "main": "main.js",
+  "scripts": {
+    "build": "webpack --mode=production --node-env=production",
+    "build:dev": "webpack --mode=development",
+    "build:dev_watch": "webpack --mode=development --watch --progress",
+    "build:prod": "webpack --mode=production --node-env=production",
+    "build:prod_watch": "webpack --mode=production --node-env=production --watch",
+    "watch": "webpack --watch",
+    "install": "npm install",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "@zhobo63/imgui-ts": "^0.1.53",
+    "@zhobo63/zlui-ts": "^0.1.70",
+    "@zhobo63/zlui-ts-spine": "^0.1.1",
+    "ts-loader": "^9.6.0",
+    "typescript": "^5.9.3",
+    "webpack": "^5.107.2",
+    "webpack-cli": "^6.0.1"
+  }
+}

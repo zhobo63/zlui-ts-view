@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>zlui-ts View</title>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <!-- Top toolbar -->
+    <div id="toolbar">
+        <span class="title">zlui-ts View</span>
+    </div>
+
+    <!-- Main three-column layout -->
+    <div id="main">
+        <!-- Left panel: directory, file list, object tree -->
+        <div id="left-panel" class="panel left">
+            <div class="section">
+                <label>工作目錄</label>
+                <div class="workdir-row">
+                    <input type="text" id="workdir-input" readonly placeholder="選擇目錄…" />
+                    <button id="browse-btn">瀏覽</button>
+                </div>
+                <!-- Hidden file input for directory selection -->
+                <input type="file" id="dir-input" webkitdirectory multiple style="display:none" />
+            </div>
+
+            <div class="section">
+                <label>縮放</label>
+                <div class="scale-row">
+                    <span id="scale-value">100</span>%
+                    <input type="range" id="scale-slider" min="10" max="1000" value="100" step="10" />
+                </div>
+            </div>
+
+            <div class="section file-section">
+                <label>檔案列表</label>
+                <ul id="file-list"></ul>
+            </div>
+        </div>
+
+        <!-- Center: Canvas render area -->
+        <div id="canvas-area" class="panel center">
+            <canvas id="render-canvas"></canvas>
+        </div>
+
+        <!-- Right panel: property editor -->
+        <div id="right-panel" class="panel right">
+            <div class="section">
+                <label>屬性</label>
+                <div id="properties-content">
+                    <p class="placeholder">選擇物件以顯示屬性</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Webpack bundle -->
+    <script src="/main.js"></script>
+</body>
+</html>

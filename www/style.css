@@ -1,0 +1,305 @@
+/* ============================================
+   zlui-ts View — VSCode Dark Theme
+   ============================================ */
+
+:root {
+    --bg-primary: #1e1a1d;
+    --bg-secondary: #252124;
+    --bg-tertiary: #2d282c;
+    --bg-hover: #383437;
+    --border-color: #3c363b;
+    --text-primary: #cccccc;
+    --text-secondary: #969696;
+    --accent-blue: #007acc;
+    --accent-green: #4ec9b0;
+    --accent-orange: #ce9178;
+    --accent-yellow: #dcdcaa;
+    --accent-red: #f44747;
+    --canvas-bg: #231a1e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+/* ---- Toolbar ---- */
+#toolbar {
+    height: 35px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+}
+
+#toolbar .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-green);
+    letter-spacing: 0.5px;
+}
+
+/* ---- Main layout ---- */
+#main {
+    display: flex;
+    height: calc(100% - 35px);
+    width: 100%;
+}
+
+.panel {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Scrollbar styling (Webkit) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background-color: var(--bg-hover);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: #504b4f;
+}
+
+/* ---- Left Panel ---- */
+#left-panel {
+    width: 260px;
+    min-width: 200px;
+    max-width: 400px;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+#left-panel .section {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#left-panel .section label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+/* Workdir row */
+.workdir-row {
+    display: flex;
+    gap: 4px;
+}
+
+#workdir-input {
+    flex: 1;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 3px;
+    outline: none;
+}
+
+#workdir-input:focus {
+    border-color: var(--accent-blue);
+}
+
+#browse-btn {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+#browse-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+/* Scale row */
+.scale-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+#scale-slider {
+    flex: 1;
+    accent-color: var(--accent-blue);
+}
+
+/* File list */
+.file-section ul {
+    list-style: none;
+    margin-top: 4px;
+}
+
+.file-section li {
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-section li:hover {
+    background-color: var(--bg-hover);
+}
+
+.file-section li.active {
+    background-color: var(--accent-blue);
+    color: #fff;
+}
+
+.file-section li.ext-ui::before {
+    content: '📄 ';
+    font-size: 10px;
+}
+
+.file-section li.error {
+    color: var(--accent-red);
+    cursor: default;
+}
+
+/* ---- Center Canvas Area ---- */
+#canvas-area {
+    flex: 1;
+    background-color: var(--canvas-bg);
+    position: relative;
+    overflow: hidden;
+}
+
+#render-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ---- Right Panel ---- */
+#right-panel {
+    width: 280px;
+    min-width: 220px;
+    max-width: 450px;
+    background-color: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+}
+
+#right-panel .section {
+    padding: 8px 12px;
+}
+
+/* Property rows */
+.prop-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    gap: 6px;
+}
+
+.prop-name {
+    min-width: 70px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.prop-value {
+    flex: 1;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 3px 6px;
+    font-size: 12px;
+    border-radius: 3px;
+    outline: none;
+    min-width: 0;
+}
+
+.prop-value:focus {
+    border-color: var(--accent-blue);
+}
+
+.prop-value[type="range"] {
+    accent-color: var(--accent-blue);
+    padding: 0;
+}
+
+.prop-value::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Placeholder text */
+.placeholder {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 8px;
+}
+
+/* Object type badge in right panel */
+.prop-row > div:first-child {
+    color: var(--accent-green);
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+/* ---- Resizable panels (drag handles) ---- */
+#left-panel::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+}
+
+#right-panel::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+}
+
+/* ---- Utility classes ---- */
+.type {
+    color: var(--accent-orange);
+    font-size: 11px;
+}
+
+.name {
+    color: var(--text-primary);
+}
