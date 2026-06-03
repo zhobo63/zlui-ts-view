@@ -37,3 +37,4 @@
 - nodejs server.js
 - config.json
   - Port (default 5600 可以設置)
+  - MaxUploadSize (default 5MB 可以設置KB,MB)
