@@ -4,12 +4,28 @@ const path = require('path');
 const { Readable } = require('stream');
 
 // Load config
-let port = 6000;
+let port = 5600;
+let maxUploadSize = 5 * 1024 * 1024; // default 5MB
+
 try {
     const configPath = path.join(__dirname, 'config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     if (config.Port) port = config.Port;
+    
+    // Parse MaxUploadSize: supports KB, MB suffixes
+    if (config.MaxUploadSize) {
+        const sizeStr = String(config.MaxUploadSize).toUpperCase().trim();
+        const match = sizeStr.match(/^(\d+(?:\.\d+)?)\s*(KB|MB)?$/);
+        if (match) {
+            const num = parseFloat(match[1]);
+            const unit = match[2] || 'MB';
+            maxUploadSize = unit === 'KB' ? num * 1024 : num * 1024 * 1024;
+        }
+    }
 } catch (e) {}
+
+const uploadDir = path.join(__dirname, 'www', 'upload');
+try { fs.mkdirSync(uploadDir, { recursive: true }); } catch(e) {}
 
 // MIME types for static files
 const mimeTypes = {
@@ -153,10 +169,15 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // API: Upload files (multipart/form-data)
+    // API: Upload files (multipart/form-data) -> www/upload/
     if (req.url.startsWith('/api/upload') && req.method === 'POST') {
         try {
             const formData = await parseMultipart(req, res);
+            
+            console.log(`[UPLOAD] Parsed ${formData.length} parts:`);
+            for (const p of formData) {
+                console.log(`  field="${p.fieldName}" file="${p.filename}" size=${p.content ? p.content.length : 0}`);
+            }
             
             let uploadedCount = 0;
             let errors = [];
@@ -164,26 +185,52 @@ const server = http.createServer(async (req, res) => {
             for (const field of formData) {
                 if (!field.filename || !field.content) continue;
                 
-                // Extract relative path from filename (webkitRelativePath format: "folder/sub/file.png")
-                const fullPath = path.join(__dirname, 'www', field.filename);
-                const dir = path.dirname(fullPath);
+                // Check file size
+                if (field.content.length > maxUploadSize) {
+                    errors.push(`${field.filename}: 超過最大上傳大小`);
+                    continue;
+                }
                 
-                // Create directory if not exists
-                try { fs.mkdirSync(dir, { recursive: true }); } catch(e) {}
+                // Save to upload/ directory (flatten - no subdirectories from client)
+                const safeName = path.basename(field.filename);
+                const fullPath = path.join(uploadDir, safeName);
                 
-                // Write file
                 fs.writeFileSync(fullPath, field.content);
                 uploadedCount++;
             }
             
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ 
-                success: true, 
+                success: errors.length === 0, 
                 count: uploadedCount,
-                message: `已上傳 ${uploadedCount} 個檔案`
+                errors: errors,
+                message: `已上傳 ${uploadedCount} 個檔案` + (errors.length ? `，${errors.length} 個失敗` : '')
             }));
         } catch (err) {
             console.error('Upload error:', err.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+        return;
+    }
+
+    // API: Clear uploaded files (trash button)
+    if (req.url.startsWith('/api/clear') && req.method === 'POST') {
+        try {
+            const entries = fs.readdirSync(uploadDir);
+            for (const entry of entries) {
+                const entryPath = path.join(uploadDir, entry);
+                const stat = fs.statSync(entryPath);
+                if (stat.isDirectory()) {
+                    fs.rmSync(entryPath, { recursive: true, force: true });
+                } else {
+                    fs.unlinkSync(entryPath);
+                }
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: '已清空上傳檔案' }));
+        } catch (err) {
+            console.error('Clear error:', err.message);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, error: err.message }));
         }

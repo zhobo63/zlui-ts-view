@@ -36,16 +36,12 @@ class App {
         // Initialize left panel
         const leftPanelContainer = document.getElementById('left-panel') as HTMLElement;
         this.leftPanel = new LeftPanel(leftPanelContainer, {
-            onWorkdirChanged: (dirPath: string) => {
-                console.log('Workdir changed:', dirPath);
-                this.leftPanel.refreshFileList();
-            },
             onScaleChanged: (scale: number) => {
                 this.renderer.setScale(scale);
             },
-            onFileSelected: async (basePath: string, fileName: string) => {
+            onFileSelected: async (fileName: string) => {
                 try {
-                    await this.renderer.loadUI(basePath, fileName);
+                    await this.renderer.loadUI('upload/', fileName);
                 } catch (err) {
                     console.error('Failed to load UI:', err);
                 }

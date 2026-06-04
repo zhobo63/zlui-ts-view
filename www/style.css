@@ -96,7 +96,9 @@ html, body {
 }
 
 #left-panel .section label {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 11px;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -105,40 +107,22 @@ html, body {
     font-weight: 600;
 }
 
-/* Workdir row */
-.workdir-row {
-    display: flex;
-    gap: 4px;
-}
-
-#workdir-input {
-    flex: 1;
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 4px 8px;
-    font-size: 12px;
-    border-radius: 3px;
-    outline: none;
-}
-
-#workdir-input:focus {
-    border-color: var(--accent-blue);
-}
-
-#browse-btn {
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 4px 10px;
-    font-size: 12px;
+/* Trash clear button */
+#clear-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
     cursor: pointer;
+    padding: 2px 6px;
+    font-size: 13px;
     border-radius: 3px;
-    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
-#browse-btn:hover {
-    background-color: var(--bg-hover);
+#clear-btn:hover {
+    background-color: var(--accent-red);
+    color: #fff;
 }
 
 /* Scale row */
@@ -152,6 +136,29 @@ html, body {
 #scale-slider {
     flex: 1;
     accent-color: var(--accent-blue);
+}
+
+/* Scale preset buttons */
+.scale-presets {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.scale-presets button {
+    flex: 1;
+    padding: 3px 0;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.scale-presets button:hover {
+    background-color: var(--bg-hover);
+    color: #fff;
 }
 
 /* File list */
@@ -180,13 +187,92 @@ html, body {
 }
 
 .file-section li.ext-ui::before {
-    content: '📄 ';
-    font-size: 10px;
+    content: '\f15c ';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-right: 4px;
 }
 
 .file-section li.error {
     color: var(--accent-red);
     cursor: default;
+}
+
+/* ---- Object Tree ---- */
+.object-tree-section ul {
+    list-style: none;
+    margin-top: 4px;
+}
+
+.object-tree-section > li {
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.1s ease;
+}
+
+.object-tree-section li:hover {
+    background-color: var(--bg-hover);
+}
+
+.object-tree-section li.active {
+    background-color: var(--accent-blue);
+    color: #fff;
+}
+
+.object-tree-section li.active .type {
+    color: #9cdcfe;
+}
+
+.object-tree-section li.active .name {
+    color: #fff;
+}
+
+/* Toggle arrow */
+.tree-toggle {
+    display: inline-block;
+    width: 12px;
+    text-align: center;
+    font-size: 8px;
+    cursor: pointer;
+    margin-right: 2px;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.tree-toggle:hover {
+    color: #fff;
+}
+
+/* Label — click to select */
+.tree-label {
+    display: inline;
+    cursor: pointer;
+}
+
+/* Children container */
+.tree-children {
+    padding-left: 0;
+    margin: 0;
+}
+
+.tree-children li {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.1s ease;
+}
+
+/* Collapsed state */
+.tree-children.collapsed {
+    display: none;
 }
 
 /* ---- Center Canvas Area ---- */
@@ -201,6 +287,66 @@ html, body {
     display: block;
     width: 100%;
     height: 100%;
+}
+
+/* ---- Scrollbars ---- */
+.scrollbar {
+    position: absolute;
+    background-color: rgba(60, 54, 59, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.scrollbar.visible {
+    opacity: 1;
+}
+
+/* Vertical scrollbar */
+.scrollbar.vertical {
+    right: 0;
+    top: 0;
+    bottom: 8px;
+    width: 8px;
+}
+
+/* Horizontal scrollbar */
+.scrollbar.horizontal {
+    left: 0;
+    bottom: 0;
+    right: 8px;
+    height: 8px;
+}
+
+.scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.4);
+    border-radius: 4px;
+    pointer-events: auto;
+    cursor: grab;
+    position: relative;
+}
+
+.scrollbar-thumb:hover {
+    background-color: rgba(160, 160, 160, 0.6);
+}
+
+.scrollbar-thumb.dragging {
+    background-color: rgba(180, 180, 180, 0.7);
+    cursor: grabbing;
+}
+
+/* Vertical thumb */
+.scrollbar.vertical .scrollbar-thumb {
+    width: 6px;
+    margin-left: 1px;
+    min-height: 20px;
+}
+
+/* Horizontal thumb */
+.scrollbar.horizontal .scrollbar-thumb {
+    height: 6px;
+    margin-top: 1px;
+    min-width: 20px;
 }
 
 /* ---- Right Panel ---- */

@@ -16,7 +16,10 @@
 - 可以捲動
 - 輸入`縮放比例` @scale: range bar 10% ~ 1000%
   - zlmgr.scale.Set(@scale,@scale)
+- `25%`按鈕、`50%`按鈕、`100%`按鈕、`200%`按鈕、`400%`按鈕
+  - 按下按鈕直接設定縮放比例
 - 檔案列表: 
+  - 固定高 可以捲動
   - 拖拉檔案 上傳到 upload資料夾 並更新檔案列表
   - 副檔名.ui為zlui dsl 點擊檔案開啟
 - `垃圾桶`按鈕 (使用圖示) `檔案列表`標題右側
@@ -31,6 +34,12 @@
 
 - canvas element 繪製 zlui
 - 開啟 *.ui 並建立 zlui 繪製於canvas上
+- 上下捲動條
+  - scroll_max: zlUIMgr.h - canvas.height
+  - scroll_value 改變時 zlUIMgr.y = -scroll_value
+- 左右捲動條
+  - scroll_max: zlUIMgr.w - canvas.width
+  - scroll_value 改變時 zlUIMgr.x = -scroll_value
 
 ## 後端
 

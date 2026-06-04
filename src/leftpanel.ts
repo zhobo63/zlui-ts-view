@@ -1,9 +1,8 @@
 import { zlUIWin } from '@zhobo63/zlui-ts';
 
 export interface LeftPanelCallbacks {
-    onWorkdirChanged?: (basePath: string) => void;
     onScaleChanged?: (scale: number) => void;
-    onFileSelected?: (basePath: string, fileName: string) => void;
+    onFileSelected?: (fileName: string) => void;
     onSelectObject?: (obj: zlUIWin | null) => void;
 }
 
@@ -15,70 +14,49 @@ interface FileEntry {
 }
 
 export class LeftPanel {
-    private workdirInput: HTMLInputElement;
-    private browseBtn: HTMLButtonElement;
-    private dirInput: HTMLInputElement; // hidden file input
     private scaleSlider: HTMLInputElement;
     private scaleValue: HTMLElement;
     private fileList: HTMLUListElement;
+    private objectTree: HTMLUListElement;
+    private clearBtn: HTMLButtonElement;
 
     private callbacks: LeftPanelCallbacks;
-    private currentBasePath: string = ''; // e.g., "ui/" relative to web root
 
     constructor(container: HTMLElement, callbacks: LeftPanelCallbacks) {
         this.callbacks = callbacks;
 
         // Get DOM elements
-        this.workdirInput = container.querySelector('#workdir-input') as HTMLInputElement;
-        this.browseBtn = container.querySelector('#browse-btn') as HTMLButtonElement;
-        this.dirInput = document.getElementById('dir-input') as HTMLInputElement;
         this.scaleSlider = container.querySelector('#scale-slider') as HTMLInputElement;
         this.scaleValue = container.querySelector('#scale-value') as HTMLElement;
         this.fileList = container.querySelector('#file-list') as HTMLUListElement;
+        this.objectTree = container.querySelector('#object-tree') as HTMLUListElement;
+        this.clearBtn = container.querySelector('#clear-btn') as HTMLButtonElement;
 
         // Setup event listeners
-        this.browseBtn.addEventListener('click', () => this.browseDirectory());
-        this.dirInput.addEventListener('change', (e) => this.handleDirSelect(e));
-        
         this.scaleSlider.addEventListener('input', () => {
             const scale = parseInt(this.scaleSlider.value);
             this.scaleValue.textContent = scale.toString();
             if (this.callbacks.onScaleChanged) this.callbacks.onScaleChanged(scale);
         });
 
-        // Setup drag & drop on the workdir input area
-        const dropZone = container.querySelector('.section') as HTMLElement;
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
-        dropZone.addEventListener('drop', (e) => this.handleDrop(e));
+        // Preset scale buttons
+        container.querySelectorAll('.scale-presets button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const scale = parseInt((btn as HTMLButtonElement).dataset.scale || '100');
+                this.scaleSlider.value = scale.toString();
+                this.scaleValue.textContent = scale.toString();
+                if (this.callbacks.onScaleChanged) this.callbacks.onScaleChanged(scale);
+            });
+        });
 
-        // Also allow dropping directly on the left panel
-        container.addEventListener('dragover', (e) => { e.preventDefault(); });
+        // Clear button — delete all uploaded files
+        this.clearBtn.addEventListener('click', () => this.clearUploads());
+
+        // Setup drag & drop on the entire left panel
+        container.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
         container.addEventListener('drop', (e) => this.handleDrop(e));
-    }
 
-    private browseDirectory(): void {
-        this.dirInput.click();
-    }
-
-    private handleDirSelect(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        if (!input.files || input.files.length === 0) return;
-
-        // Get the base directory path from the first file's webkitRelativePath
-        const firstFile = input.files[0];
-        const relativePath = (firstFile as any).webkitRelativePath || '';
-        const dirName = relativePath.substring(0, relativePath.indexOf('/'));
-
-        // Set basePath relative to web root (zlUIMgr.Load() does: fetch(path + file))
-        this.currentBasePath = dirName + '/';
-        this.workdirInput.value = this.currentBasePath;
-
-        if (this.callbacks.onWorkdirChanged) {
-            this.callbacks.onWorkdirChanged(this.currentBasePath);
-        }
-
-        // Reset file input so same directory can be re-selected
-        input.value = '';
+        this.refreshFileList();
     }
 
     private async handleDrop(event: DragEvent): Promise<void> {
@@ -88,22 +66,8 @@ export class LeftPanel {
         const files = event.dataTransfer?.files;
         if (!files || files.length === 0) return;
 
-        // Extract directory name from webkitRelativePath (folder drop) or use first file name
-        const firstFile = files[0];
-        const relativePath = (firstFile as any).webkitRelativePath || '';
-        const dirName = relativePath.includes('/') 
-            ? relativePath.substring(0, relativePath.indexOf('/'))
-            : firstFile.name;
-
-        this.currentBasePath = dirName + '/';
-        this.workdirInput.value = this.currentBasePath;
-
-        if (this.callbacks.onWorkdirChanged) {
-            this.callbacks.onWorkdirChanged(this.currentBasePath);
-        }
-
-        // Upload ALL files to server (not just .ui)
-        await this.uploadAllFiles(files, dirName);
+        // Upload ALL dropped files to server's upload/ directory
+        await this.uploadFiles(files);
 
         // If a .ui file exists in the dropped files, open it after upload completes
         const uiFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.ui'));
@@ -111,54 +75,73 @@ export class LeftPanel {
             console.log('Dropped .ui file:', uiFile.name);
             setTimeout(() => {
                 if (this.callbacks.onFileSelected) {
-                    this.callbacks.onFileSelected(this.currentBasePath, uiFile.name);
+                    this.callbacks.onFileSelected(uiFile.name);
                 }
             }, 200);
         }
     }
 
-    /** Upload all dropped files to server */
-    private async uploadAllFiles(fileList: FileList, targetDir: string): Promise<void> {
-        const formData = new FormData();
-        
-        for (let i = 0; i < fileList.length; i++) {
-            const file = fileList[i];
-            // webkitRelativePath is "folder/sub/file.ext" — use as-is for server path
-            const relativePath = (file as any).webkitRelativePath || file.name;
-            formData.append('files', file, relativePath);
-        }
+    /** Upload files to server's upload/ directory — one request per file */
+     private async uploadFiles(fileList: FileList): Promise<void> {
+         console.log(`Uploading ${fileList.length} files to /api/upload...`);
 
-        console.log(`Uploading ${fileList.length} files to /api/upload...`);
-        
+         let successCount = 0;
+         const errors: string[] = [];
+
+         for (let i = 0; i < fileList.length; i++) {
+             const file = fileList[i];
+             const formData = new FormData();
+             formData.append('file', file, file.name);
+
+             try {
+                 const response = await fetch('/api/upload', {
+                     method: 'POST',
+                     body: formData
+                 });
+
+                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                 const result = await response.json();
+                 if (result.success) {
+                     successCount++;
+                 } else {
+                     errors.push(`${file.name}: ${result.error || '上傳失敗'}`);
+                 }
+             } catch (err) {
+                 errors.push(`${file.name}: ${(err as Error).message}`);
+             }
+         }
+
+         console.log(`Upload complete: ${successCount} ok, ${errors.length} failed`);
+         if (errors.length > 0) console.warn('Errors:', errors);
+
+         // Refresh file list from upload/ directory
+         this.refreshFileList();
+     }
+
+    /** Clear all uploaded files via /api/clear */
+    private async clearUploads(): Promise<void> {
         try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
+            const response = await fetch('/api/clear', { method: 'POST' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
+
             const result = await response.json();
-            console.log('Upload complete:', result.message || result.count + ' files uploaded');
-            
-            // Refresh file list after upload
+            console.log('Clear complete:', result.message);
+
+            // Refresh file list
             this.refreshFileList();
         } catch (err) {
-            console.error('Upload failed:', err);
-            alert(`上傳失敗：${(err as Error).message}`);
+            console.error('Clear failed:', err);
+            alert(`清空失敗：${(err as Error).message}`);
         }
     }
 
-    /** Update the file list from server */
+    /** Update the file list from server's upload/ directory */
     async refreshFileList(): Promise<void> {
-        if (!this.currentBasePath) return;
-
         try {
-            // Extract directory name for API call (strip leading/trailing slashes)
-            const dirName = this.currentBasePath.replace(/^\/+|\/+$/g, '');
-            const response = await fetch(`/api/dir?path=${encodeURIComponent(dirName)}`);
+            const response = await fetch('/api/dir?path=upload');
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
+
             const data = await response.json();
             this.renderFileList(data.files || []);
         } catch (err) {
@@ -186,118 +169,128 @@ export class LeftPanel {
                     li.classList.add('active');
 
                     if (this.callbacks.onFileSelected) {
-                        this.callbacks.onFileSelected(this.currentBasePath, file.name);
+                        this.callbacks.onFileSelected(file.name);
                     }
                 });
             }
 
             this.fileList.appendChild(li);
         }
+    }
+
+    /** Resolve children array from a zlUIWin object */
+    private resolveChildren(obj: any): any[] {
+        // Method 1: Check for 'children' property
+        if (obj.children && Array.isArray(obj.children)) {
+            return obj.children;
+        }
+        // Method 2: Check for internal array properties
+        for (const key of Object.keys(obj)) {
+            const val = obj[key];
+            if (val instanceof Object && !('Name' in val) && Array.isArray(val)) {
+                return val;
+            }
+        }
+        return [];
     }
 
     /** Update the object tree from a zlUIMgr instance */
     updateObjectTree(ui: zlUIWin | null): void {
-        // Clear existing list
-        this.fileList.innerHTML = '';
+        // Clear existing tree
+        this.objectTree.innerHTML = '';
 
         if (!ui) return;
 
-        // Store reference to current UI for selection
         const uiMgr = ui;
 
-        // Build tree from zlUIWin children
-        const buildTree = (parent: zlUIWin, parentLi: HTMLElement, depth: number): void => {
-            // Try multiple ways to access children
-            let children: any[] = [];
-            
-            // Method 1: Check for 'children' property
-            if ((parent as any).children && Array.isArray((parent as any).children)) {
-                children = (parent as any).children;
-            }
-            // Method 2: Check for internal array properties
-            else {
-                for (const key of Object.keys(parent)) {
-                    const val = (parent as any)[key];
-                    if (val instanceof Object && !('Name' in val) && Array.isArray(val)) {
-                        children = val;
-                        break;
-                    }
-                }
-            }
-
-            for (const child of children) {
-                if (!child || typeof child !== 'object') continue;
-                
-                const li = document.createElement('li');
-                li.style.paddingLeft = `${depth * 16 + 8}px`;
-                
-                const name = (child as zlUIWin).Name || '(unnamed)';
-                const type = (child as any).constructor?.name || 'Win';
-                li.innerHTML = `<span class="type">${type}</span> <span class="name">${name}</span>`;
-
-                // Click to select object
-                li.addEventListener('click', () => {
-                    this.fileList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
-                    li.classList.add('active');
-                    
-                    // Notify right panel to show properties
-                    if (this.callbacks.onSelectObject) {
-                        this.callbacks.onSelectObject(child as zlUIWin);
-                    }
-                });
-
-                parentLi.appendChild(li);
-
-                // Recurse into children
-                buildTree(child as zlUIWin, li, depth + 1);
-            }
-        };
-
-        // The root UI manager's children are the top-level objects
-        let topLevelChildren: any[] = [];
-        
-        // Try to get children from zlUIMgr
-        if ((uiMgr as any).children && Array.isArray((uiMgr as any).children)) {
-            topLevelChildren = (uiMgr as any).children;
-        } else {
-            // Fallback: look for common array properties
-            for (const key of Object.keys(uiMgr)) {
-                const val = (uiMgr as any)[key];
-                if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
-                    topLevelChildren = val;
-                    break;
-                }
-            }
-        }
-
-        for (const child of topLevelChildren) {
-            if (!child || typeof child !== 'object') continue;
-            
+        // Create a single <li> node with toggle + label + children container
+        const createNode = (obj: any, depth: number): HTMLLIElement => {
             const li = document.createElement('li');
-            const name = (child as zlUIWin).Name || '(unnamed)';
-            const type = (child as any).constructor?.name || 'Win';
-            li.innerHTML = `<span class="type">${type}</span> <span class="name">${name}</span>`;
+            li.style.paddingLeft = `${depth * 16}px`;
 
-            li.addEventListener('click', () => {
-                this.fileList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+            const name = obj.Name || '(unnamed)';
+            const type = obj.constructor?.name || 'Win';
+
+            // Check if this object has children
+            const children = this.resolveChildren(obj);
+            const hasChildren = children.length > 0;
+
+            // Toggle arrow (only for nodes with children)
+            let toggleSpan: HTMLSpanElement | null = null;
+            if (hasChildren) {
+                toggleSpan = document.createElement('span');
+                toggleSpan.className = 'tree-toggle';
+                toggleSpan.textContent = '\u25BC'; // down arrow (expanded)
+                li.appendChild(toggleSpan);
+            }
+
+            // Label span — click to select
+            const label = document.createElement('span');
+            label.className = 'tree-label';
+            label.innerHTML = `<span class="type">${type}</span> <span class="name">${name}</span>`;
+            li.appendChild(label);
+
+            // Children container (only for nodes with children)
+            let childContainer: HTMLElement | null = null;
+            if (hasChildren) {
+                childContainer = document.createElement('ul');
+                childContainer.className = 'tree-children';
+                li.appendChild(childContainer);
+            }
+
+            // Click on label to select object
+            label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.objectTree.querySelectorAll('li.active').forEach(el => el.classList.remove('active'));
                 li.classList.add('active');
-                
+
                 if (this.callbacks.onSelectObject) {
-                    this.callbacks.onSelectObject(child as zlUIWin);
+                    this.callbacks.onSelectObject(obj as zlUIWin);
                 }
             });
 
-            this.fileList.appendChild(li);
-            buildTree(child as zlUIWin, li, 1);
+            // Click on toggle to expand/collapse
+            if (toggleSpan && childContainer) {
+                toggleSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isCollapsed = childContainer.classList.toggle('collapsed');
+                    toggleSpan.textContent = isCollapsed ? '\u25B6' : '\u25BC'; // right / down arrow
+                });
+            }
+
+            return li;
+        };
+
+        // Recursively populate children into the container
+        const populateChildren = (obj: any, container: HTMLElement, depth: number): void => {
+            const children = this.resolveChildren(obj);
+            for (const child of children) {
+                if (!child || typeof child !== 'object') continue;
+
+                const childLi = createNode(child, depth + 1);
+                container.appendChild(childLi);
+
+                // Recurse — find the child's own container
+                const grandChildContainer = childLi.querySelector(':scope > ul.tree-children');
+                if (grandChildContainer) {
+                    populateChildren(child, grandChildContainer as HTMLElement, depth + 1);
+                }
+            }
+        };
+
+        // Build top-level nodes from uiMgr
+        const topLevelChildren = this.resolveChildren(uiMgr);
+        for (const child of topLevelChildren) {
+            if (!child || typeof child !== 'object') continue;
+
+            const li = createNode(child, 0);
+            this.objectTree.appendChild(li);
+
+            // Populate children recursively
+            const childContainer = li.querySelector(':scope > ul.tree-children');
+            if (childContainer) {
+                populateChildren(child, childContainer as HTMLElement, 0);
+            }
         }
-    }
-
-    setWorkdir(path: string): void {
-        this.currentBasePath = path;
-        this.workdirInput.value = path;
-    }
-
-    getWorkdir(): string {
-        return this.currentBasePath;
     }
 }

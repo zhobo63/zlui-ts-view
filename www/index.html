@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>zlui-ts View</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -14,35 +15,39 @@
 
     <!-- Main three-column layout -->
     <div id="main">
-        <!-- Left panel: directory, file list, object tree -->
+        <!-- Left panel: scale, file list, object tree -->
         <div id="left-panel" class="panel left">
-            <div class="section">
-                <label>工作目錄</label>
-                <div class="workdir-row">
-                    <input type="text" id="workdir-input" readonly placeholder="選擇目錄…" />
-                    <button id="browse-btn">瀏覽</button>
-                </div>
-                <!-- Hidden file input for directory selection -->
-                <input type="file" id="dir-input" webkitdirectory multiple style="display:none" />
-            </div>
-
             <div class="section">
                 <label>縮放</label>
                 <div class="scale-row">
                     <span id="scale-value">100</span>%
                     <input type="range" id="scale-slider" min="10" max="1000" value="100" step="10" />
                 </div>
+                <div class="scale-presets">
+                    <button data-scale="25">25%</button>
+                    <button data-scale="50">50%</button>
+                    <button data-scale="100">100%</button>
+                    <button data-scale="200">200%</button>
+                    <button data-scale="400">400%</button>
+                </div>
             </div>
 
             <div class="section file-section">
-                <label>檔案列表</label>
+                <label>檔案列表 <button id="clear-btn" title="清空上傳檔案"><i class="fa-solid fa-trash-can"></i></button></label>
                 <ul id="file-list"></ul>
+            </div>
+
+            <div class="section object-tree-section">
+                <label>物件樹</label>
+                <ul id="object-tree"></ul>
             </div>
         </div>
 
         <!-- Center: Canvas render area -->
         <div id="canvas-area" class="panel center">
             <canvas id="render-canvas"></canvas>
+            <div id="scroll-v" class="scrollbar vertical"><div class="scrollbar-thumb"></div></div>
+            <div id="scroll-h" class="scrollbar horizontal"><div class="scrollbar-thumb"></div></div>
         </div>
 
         <!-- Right panel: property editor -->

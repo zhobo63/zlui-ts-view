@@ -1,3 +1,4 @@
 {
-    "Port": 5600
+   "Port": 5600,
+   "MaxUploadSize": "5MB"
 }
