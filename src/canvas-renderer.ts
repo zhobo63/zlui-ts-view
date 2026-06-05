@@ -4,6 +4,12 @@ import { zlUIMgr, zlUIWin } from '@zhobo63/zlui-ts';
 import { BackendImGui } from '@zhobo63/zlui-ts/src/BackendImGui';
 import { FGUI, FGUIPackage } from './fgui/fgui';
 
+export interface FguiResourceInfo {
+    name: string;
+    type: number; // EResourceType
+    hasSrc: boolean; // whether resource["@"].src exists
+}
+
 export class CanvasRenderer {
     private canvas: HTMLCanvasElement;
     private ui: zlUIMgr | null = null;
@@ -27,7 +33,7 @@ export class CanvasRenderer {
     // Callbacks
     onFileLoaded?: (ui: zlUIMgr, fileName: string) => void;
     onSelectObject?: (obj: zlUIWin | null) => void;
-    onFguiLoaded?: (resourceKeys: string[]) => void;
+    onFguiLoaded?: (resources: FguiResourceInfo[]) => void;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -300,8 +306,22 @@ export class CanvasRenderer {
         console.log(`Loaded FGUI: ${fileName} (${Object.keys(pkg.resources).length} resources)`);
 
         if (this.onFguiLoaded) {
-            const keys = Object.keys(this.fguiPackage.resources);
-            this.onFguiLoaded(keys);
+            console.log(this.fguiPackage.resources);
+            const resourceInfo: FguiResourceInfo[] = [];
+            for (const [key, res] of Object.entries(this.fguiPackage.resources)) {
+                // Skip duplicate entries (same component stored by name and id)
+                if (resourceInfo.some(r => r.name === key)) continue;
+                const attr = (res as any)[':@'];
+                if(key === attr.id)
+                    continue;
+                resourceInfo.push({
+                    name: key,
+                    type: (res as any).type ?? 0,
+                    hasSrc: !!(attr && attr.src),
+                });
+            }
+            resourceInfo.sort((a,b)=>a.name.localeCompare(b.name));
+            this.onFguiLoaded(resourceInfo);
         }
     }
 

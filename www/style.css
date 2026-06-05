@@ -215,6 +215,27 @@ html, body {
 .resource-item:hover { background-color: var(--bg-hover); }
 .resource-item.active { background-color: var(--accent-blue); color: #fff; }
 
+/* ---- Resource Filters ---- */
+.resource-filters {
+    padding: 4px 8px;
+    border-bottom: 1px solid #3c3c3c;
+}
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #cccccc;
+    cursor: pointer;
+    user-select: none;
+}
+.filter-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #007acc;
+    cursor: pointer;
+}
+
 /* ---- Object Tree ---- */
 .object-tree-section ul {
     list-style: none;

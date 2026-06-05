@@ -1,4 +1,8 @@
 import { zlUIWin } from '@zhobo63/zlui-ts';
+import { FguiResourceInfo } from './canvas-renderer';
+
+// EResourceType.Component = 9 (from fgui.ts)
+const EResourceType_Component = 9;
 
 export interface LeftPanelCallbacks {
     onScaleChanged?: (scale: number) => void;
@@ -23,6 +27,10 @@ export class LeftPanel {
     private clearBtn: HTMLButtonElement;
     private resourceSection: HTMLElement;
     private resourceList: HTMLUListElement;
+    private topComponentFilter: HTMLInputElement;
+
+    // Stored resource data for filtering
+    private allResources: FguiResourceInfo[] = [];
 
     private callbacks: LeftPanelCallbacks;
 
@@ -37,6 +45,12 @@ export class LeftPanel {
         this.clearBtn = container.querySelector('#clear-btn') as HTMLButtonElement;
         this.resourceSection = container.querySelector('#resource-section') as HTMLElement;
         this.resourceList = container.querySelector('#resource-list') as HTMLUListElement;
+        this.topComponentFilter = container.querySelector('#filter-topcomponent') as HTMLInputElement;
+
+        // TopComponent filter checkbox
+        this.topComponentFilter.addEventListener('change', () => {
+            this.applyResourceFilter();
+        });
 
         // Setup event listeners
         this.scaleSlider.addEventListener('input', () => {
@@ -196,21 +210,38 @@ export class LeftPanel {
         }
     }
 
-    /** Show resource list from FGUI package */
-    showResources(keys: string[]): void {
+    /** Show resource list from FGUI package with filtering */
+    showResources(resources: FguiResourceInfo[]): void {
         this.resourceSection.style.display = '';
+        this.allResources = resources;
+        this.applyResourceFilter();
+    }
+
+    /** Apply active filters and re-render the resource list */
+    private applyResourceFilter(): void {
         this.resourceList.innerHTML = '';
 
-        for (const key of keys) {
+        const showTopComponent = this.topComponentFilter.checked;
+
+        const filtered = this.allResources.filter(res => {
+            if (showTopComponent) {
+                // TopComponent: type == Component && !hasSrc
+                return res.type === EResourceType_Component && !res.hasSrc;
+            }
+            // When unchecked, show all resources
+            return true;
+        });
+
+        for (const res of filtered) {
             const li = document.createElement('li');
-            li.textContent = key;
+            li.textContent = res.name;
             li.className = 'resource-item';
             li.addEventListener('click', () => {
                 this.resourceList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
                 li.classList.add('active');
 
                 if (this.callbacks.onResourceSelected) {
-                    this.callbacks.onResourceSelected(key);
+                    this.callbacks.onResourceSelected(res.name);
                 }
             });
             this.resourceList.appendChild(li);

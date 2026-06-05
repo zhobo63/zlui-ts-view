@@ -2,7 +2,7 @@ import { ImGui, ImGui_Impl } from '@zhobo63/imgui-ts';
 import { zlUIMgr, zlUIWin } from '@zhobo63/zlui-ts';
 
 // Import our modules
-import { CanvasRenderer } from './canvas-renderer';
+import { CanvasRenderer, FguiResourceInfo } from './canvas-renderer';
 import { LeftPanel } from './leftpanel';
 import { RightPanel } from './rightpanel';
 
@@ -34,11 +34,11 @@ class App {
         };
 
         // Setup fgui callbacks
-        this.renderer.onFguiLoaded = (keys: string[]) => {
+        this.renderer.onFguiLoaded = (resources: FguiResourceInfo[]) => {
             this.leftPanel.hideResources();
             this.leftPanel.updateObjectTree(null);
             this.rightPanel.clear();
-            this.leftPanel.showResources(keys);
+            this.leftPanel.showResources(resources);
         };
 
         // Initialize left panel
