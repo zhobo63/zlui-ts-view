@@ -4,6 +4,8 @@ export interface LeftPanelCallbacks {
     onScaleChanged?: (scale: number) => void;
     onFileSelected?: (fileName: string) => void;
     onSelectObject?: (obj: zlUIWin | null) => void;
+    onFguiSelected?: (fileName: string) => void;
+    onResourceSelected?: (key: string) => void;
 }
 
 /** Represents a file entry from the directory listing API */
@@ -19,6 +21,8 @@ export class LeftPanel {
     private fileList: HTMLUListElement;
     private objectTree: HTMLUListElement;
     private clearBtn: HTMLButtonElement;
+    private resourceSection: HTMLElement;
+    private resourceList: HTMLUListElement;
 
     private callbacks: LeftPanelCallbacks;
 
@@ -31,6 +35,8 @@ export class LeftPanel {
         this.fileList = container.querySelector('#file-list') as HTMLUListElement;
         this.objectTree = container.querySelector('#object-tree') as HTMLUListElement;
         this.clearBtn = container.querySelector('#clear-btn') as HTMLButtonElement;
+        this.resourceSection = container.querySelector('#resource-section') as HTMLElement;
+        this.resourceList = container.querySelector('#resource-list') as HTMLUListElement;
 
         // Setup event listeners
         this.scaleSlider.addEventListener('input', () => {
@@ -153,11 +159,12 @@ export class LeftPanel {
     private renderFileList(files: FileEntry[]): void {
         this.fileList.innerHTML = '';
 
-        // Filter to show .ui files first, then all files
+        // Filter to show .ui and .fui files first, then all files
         const uiFiles = files.filter(f => f.ext === '.ui');
-        const otherFiles = files.filter(f => f.ext !== '.ui' && !f.isDirectory);
+        const fuiFiles = files.filter(f => f.ext === '.fui');
+        const otherFiles = files.filter(f => f.ext !== '.ui' && f.ext !== '.fui' && !f.isDirectory);
 
-        for (const file of [...uiFiles, ...otherFiles]) {
+        for (const file of [...uiFiles, ...fuiFiles, ...otherFiles]) {
             const li = document.createElement('li');
             li.textContent = file.name;
 
@@ -172,10 +179,48 @@ export class LeftPanel {
                         this.callbacks.onFileSelected(file.name);
                     }
                 });
+            } else if (file.ext === '.fui') {
+                li.classList.add('ext-fui');
+                li.addEventListener('click', () => {
+                    // Remove active from all
+                    this.fileList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+                    li.classList.add('active');
+
+                    if (this.callbacks.onFguiSelected) {
+                        this.callbacks.onFguiSelected(file.name);
+                    }
+                });
             }
 
             this.fileList.appendChild(li);
         }
+    }
+
+    /** Show resource list from FGUI package */
+    showResources(keys: string[]): void {
+        this.resourceSection.style.display = '';
+        this.resourceList.innerHTML = '';
+
+        for (const key of keys) {
+            const li = document.createElement('li');
+            li.textContent = key;
+            li.className = 'resource-item';
+            li.addEventListener('click', () => {
+                this.resourceList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+                li.classList.add('active');
+
+                if (this.callbacks.onResourceSelected) {
+                    this.callbacks.onResourceSelected(key);
+                }
+            });
+            this.resourceList.appendChild(li);
+        }
+    }
+
+    /** Hide resource list */
+    hideResources(): void {
+        this.resourceSection.style.display = 'none';
+        this.resourceList.innerHTML = '';
     }
 
     /** Resolve children array from a zlUIWin object */

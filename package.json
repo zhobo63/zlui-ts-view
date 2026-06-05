@@ -27,9 +27,12 @@
     "start": "node server.js"
   },
   "devDependencies": {
+    "@types/pako": "^2.0.4",
     "@zhobo63/imgui-ts": "^0.1.53",
     "@zhobo63/zlui-ts": "^0.1.70",
     "@zhobo63/zlui-ts-spine": "^0.1.1",
+    "fast-xml-parser": "^5.8.0",
+    "pako": "^2.1.0",
     "ts-loader": "^9.6.0",
     "typescript": "^5.9.3",
     "webpack": "^5.107.2",

@@ -8,6 +8,7 @@
 - dark style like vscode
 - package.json 包含套件 "@zhobo63/imgui-ts" "@zhobo63/zlui-ts" "@zhobo63/zlui-ts-spine"
 - src/ 目錄放置 typescript 
+- src/fgui/fgui.ts 讀取fui檔案類型 FGUI.Load
 - www/upload 存放上傳檔案
 - 圖示使用font-awesome
 
@@ -22,9 +23,19 @@
   - 固定高 可以捲動
   - 拖拉檔案 上傳到 upload資料夾 並更新檔案列表
   - 副檔名.ui為zlui dsl 點擊檔案開啟
+  - 副檔名.fui為fgui 點擊檔案開啟
 - `垃圾桶`按鈕 (使用圖示) `檔案列表`標題右側
   - 按下清空上傳檔案
+- 開啟fgui檔案
+  - 開啟後顯示`資源`列表: 列表內容為 FGUIPackage resources 的key
+  - 支持 hover, selected high light 
+  - 點選資源項目則建立zlui元件 
+- 資源項目
+  - 勾選`TopComponent` (預設勾選)
+    過濾條件 resources.type == EResourceType.Component && (resources[":@"].src) 
 - 樹狀結構顯示 zlui-framework 的物件
+  - 支持 hover, selected high light
+  - 可展開/收合的樹狀結構顯示巢狀物件
 
 ### Right Panel
 

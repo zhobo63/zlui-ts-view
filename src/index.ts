@@ -33,6 +33,14 @@ class App {
             }
         };
 
+        // Setup fgui callbacks
+        this.renderer.onFguiLoaded = (keys: string[]) => {
+            this.leftPanel.hideResources();
+            this.leftPanel.updateObjectTree(null);
+            this.rightPanel.clear();
+            this.leftPanel.showResources(keys);
+        };
+
         // Initialize left panel
         const leftPanelContainer = document.getElementById('left-panel') as HTMLElement;
         this.leftPanel = new LeftPanel(leftPanelContainer, {
@@ -52,6 +60,16 @@ class App {
                 } else {
                     this.rightPanel.clear();
                 }
+            },
+            onFguiSelected: async (fileName: string) => {
+                try {
+                    await this.renderer.loadFgui(fileName);
+                } catch (err) {
+                    console.error('Failed to load FGUI:', err);
+                }
+            },
+            onResourceSelected: (key: string) => {
+                this.renderer.renderResource(key);
             }
         });
 

@@ -2,6 +2,7 @@ import { ImGui, ImGui_Impl } from '@zhobo63/imgui-ts';
 import { ImVec4 } from '@zhobo63/imgui-ts/src/imgui';
 import { zlUIMgr, zlUIWin } from '@zhobo63/zlui-ts';
 import { BackendImGui } from '@zhobo63/zlui-ts/src/BackendImGui';
+import { FGUI, FGUIPackage } from './fgui/fgui';
 
 export class CanvasRenderer {
     private canvas: HTMLCanvasElement;
@@ -9,6 +10,9 @@ export class CanvasRenderer {
     private animFrameId: number | null = null;
     private backgroundColor: ImVec4;
     private scaleRatio: number = 1.0;
+
+    // FGUI support
+    private fguiPackage: FGUIPackage | null = null;
 
     // Scroll state
     private scrollX: number = 0;
@@ -23,6 +27,7 @@ export class CanvasRenderer {
     // Callbacks
     onFileLoaded?: (ui: zlUIMgr, fileName: string) => void;
     onSelectObject?: (obj: zlUIWin | null) => void;
+    onFguiLoaded?: (resourceKeys: string[]) => void;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -276,6 +281,61 @@ export class CanvasRenderer {
         console.log(`Loaded UI: ${fileName} (${this.ui.calrect_count} objects, ${this.contentW}x${this.contentH})`);
 
         if (this.onFileLoaded) this.onFileLoaded(this.ui, fileName);
+    }
+
+    /** Load a .fui file using FGUI.Load() */
+    async loadFgui(fileName: string): Promise<void> {
+        // Clear any existing UI
+        this.fguiPackage = null;
+        this.ui = null;
+
+        const pkg = await FGUI.Load(fileName, 'upload/');
+        this.fguiPackage = pkg;
+
+        // Reset scroll on new file load
+        this.scrollX = 0;
+        this.scrollY = 0;
+        this.updateScrollbars();
+
+        console.log(`Loaded FGUI: ${fileName} (${Object.keys(pkg.resources).length} resources)`);
+
+        if (this.onFguiLoaded) {
+            const keys = Object.keys(this.fguiPackage.resources);
+            this.onFguiLoaded(keys);
+        }
+    }
+
+    /** Render a specific resource from the loaded FGUI package */
+    renderResource(resourceName: string): void {
+        if (!this.fguiPackage || !this.canvas) return;
+
+        // Create fresh zlUIMgr for the resource
+        this.ui = new zlUIMgr();
+        this.ui.backend = new BackendImGui(ImGui.GetBackgroundDrawList());
+        this.ui.scale.Set(this.scaleRatio, this.scaleRatio);
+
+        const component = this.fguiPackage.Create(resourceName, this.ui);
+        if (component) {
+            this.ui.AddChild(component);
+            this.ui.origin.Set(0, 0);
+            this.ui.SetCalRect();
+
+            // Reset scroll
+            this.scrollX = 0;
+            this.scrollY = 0;
+            this.ui.x = 0;
+            this.ui.y = 0;
+            this.updateScrollbars();
+
+            console.log(`Rendered FGUI resource: ${resourceName} (${this.ui.calrect_count} objects, ${this.contentW}x${this.contentH})`);
+
+            // Update object tree
+            if (this.onFileLoaded) {
+                this.onFileLoaded(this.ui, resourceName);
+            }
+        } else {
+            console.error(`Failed to create FGUI resource: ${resourceName}`);
+        }
     }
 
     /** Start the render loop */

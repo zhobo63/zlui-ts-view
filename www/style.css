@@ -193,10 +193,27 @@ html, body {
     margin-right: 4px;
 }
 
+.file-section li.ext-fui::before {
+    content: '\f1c6 '; /* fa-file-image */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-right: 4px;
+    color: var(--accent-green);
+}
+
 .file-section li.error {
     color: var(--accent-red);
     cursor: default;
 }
+
+/* ---- Resource List ---- */
+.resource-section ul { list-style: none; margin-top: 4px; }
+.resource-item {
+    padding: 3px 8px; cursor: pointer; border-radius: 3px; font-size: 12px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.resource-item:hover { background-color: var(--bg-hover); }
+.resource-item.active { background-color: var(--accent-blue); color: #fff; }
 
 /* ---- Object Tree ---- */
 .object-tree-section ul {
